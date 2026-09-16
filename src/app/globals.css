@@ -1,0 +1,1182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ *
+ * Paleta: negro + verde dominantes, dorado como apoyo.
+ * Única fuente de verdad del look. Los timings de la ruleta viven en
+ * game/config.ts; acá solo están las curvas/estética.
+ * El multicolor solo se usa, a propósito, en las cartas de élite.
+ * ------------------------------------------------------------------ */
+
+:root {
+  color-scheme: dark;
+
+  --c-bg: #04070a;
+  --c-bg-2: #081410;
+  --c-green: #10b981;
+  --c-green-bright: #c6ff3d;
+  --c-gold: #ffd23f;
+  --c-lime: #c6ff3d;
+  --c-ink: #e9f5ec;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Escala visual general en desktop: la interfaz fue pensada con bastante
+ * densidad y se siente "apretada" al 100% de zoom del navegador. `zoom`
+ * (a diferencia de `transform: scale`) recalcula vh/vw y los breakpoints
+ * contra un viewport CSS efectivamente más grande, igual que si el usuario
+ * bajara el zoom del navegador: por eso da más aire real sin mover ni
+ * reacomodar nada. Solo desktop (el móvil usa su propio árbol de
+ * componentes, ver `useIsMobile`, y no debe verse afectado). */
+@media (min-width: 768px) {
+  html {
+    zoom: 0.8;
+  }
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  color: var(--c-ink);
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 720px at 12% -12%, rgba(16, 185, 129, 0.22), transparent 60%),
+    radial-gradient(1000px 720px at 92% -4%, rgba(16, 185, 129, 0.14), transparent 55%),
+    radial-gradient(900px 900px at 50% 118%, rgba(255, 210, 63, 0.1), transparent 60%),
+    linear-gradient(180deg, var(--c-bg-2), var(--c-bg) 62%);
+  background-attachment: fixed;
+}
+
+/* Barrido de luces de estadio, muy sutil, por detrás de todo. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.035) 47%,
+    rgba(16, 185, 129, 0.08) 50%,
+    rgba(255, 210, 63, 0.05) 53%,
+    transparent 62%
+  );
+  background-size: 260% 100%;
+  animation: sweep 13s ease-in-out infinite;
+}
+
+/* Todo el contenido de la app queda por encima del barrido. */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+.font-display {
+  font-family: var(--font-display), "Arial Narrow", "Roboto Condensed", system-ui,
+    sans-serif;
+  letter-spacing: 0.04em;
+}
+
+@keyframes sweep {
+  0% {
+    background-position: 125% 0;
+  }
+  100% {
+    background-position: -45% 0;
+  }
+}
+
+/* Un valor entrando en la ruleta: cae desde arriba, veloz y borroso. */
+@keyframes reel-in {
+  0% {
+    transform: translateY(-95%);
+    opacity: 0;
+    filter: blur(7px);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+.reel-in {
+  animation: reel-in 90ms linear;
+}
+
+/* La frenada dramática: sobre-escala, rebote y flash de brillo. */
+@keyframes slam {
+  0% {
+    transform: scale(1.34) rotate(-4deg);
+    filter: brightness(2.3) saturate(1.7);
+  }
+  28% {
+    transform: scale(0.9) rotate(2deg);
+    filter: brightness(1.35);
+  }
+  52% {
+    transform: scale(1.07) rotate(-1deg);
+  }
+  74% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    filter: brightness(1);
+  }
+}
+.slam {
+  animation: slam 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Estallido de luz al bloquearse un cuadrado: se recorta a su propio
+ * border-radius (no al overflow del contenedor), para que ese contenedor
+ * pueda dejar de recortar contenido (necesario para que el hover de las
+ * cartas pueda agrandarlas sin cortarlas). */
+@keyframes burst {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.burst::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, #fff, transparent 70%);
+  animation: burst 460ms ease-out forwards;
+}
+
+/* "Atención" de un botón que lleva un rato sin usarse: la mayor parte del
+ * ciclo queda quieto (no es un loop constante) y cada tanto da un empujoncito
+ * corto y sutil — "podés hacer clic acá" — antes de volver a quedarse quieto.
+ * Se activa/desactiva desde JS (ver `useAtencionBoton`), no por :hover. */
+@keyframes atencion-pulso {
+  0%,
+  78%,
+  100% {
+    transform: scale(1) translateX(0);
+  }
+  84% {
+    transform: scale(1.045) translateX(-3px);
+  }
+  90% {
+    transform: scale(1.045) translateX(3px);
+  }
+  95% {
+    transform: scale(1.015) translateX(0);
+  }
+}
+.atencion-pulso {
+  animation: atencion-pulso 3.4s ease-in-out infinite;
+}
+
+/* Respiración en reposo: invita a rollear. */
+@keyframes breathe {
+  0%,
+  100% {
+    filter: brightness(0.9);
+  }
+  50% {
+    filter: brightness(1.12);
+  }
+}
+.breathe {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+/* Anillo pulsante del botón ROLL cuando está disponible. */
+@keyframes ring-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 24px -6px rgba(16, 185, 129, 0.85),
+      0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 32px -2px rgba(255, 210, 63, 0.9),
+      0 0 0 4px rgba(255, 255, 255, 0.1);
+  }
+}
+.ring-pulse {
+  animation: ring-pulse 1.8s ease-in-out infinite;
+}
+/* El botón ROLL puede tener `.ring-pulse` (anillo, siempre que esté
+ * habilitado) Y `.atencion-pulso` (empujón por inactividad) al mismo tiempo:
+ * `animation` es una sola propiedad, así que dos clases separadas se pisan en
+ * vez de sumarse. Esta regla combinada hace que ambas corran juntas. */
+.ring-pulse.atencion-pulso {
+  animation:
+    ring-pulse 1.8s ease-in-out infinite,
+    atencion-pulso 3.4s ease-in-out infinite;
+}
+
+/* Barrido de brillo (botones y cartas). */
+@keyframes sheen {
+  0% {
+    transform: translateX(-160%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(320%) skewX(-20deg);
+  }
+}
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+.sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 38%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: translateX(-160%) skewX(-20deg);
+}
+.sheen.sheen-run::after,
+.sheen:hover::after {
+  animation: sheen 850ms ease-out;
+}
+
+.btn-roll::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: translateX(-160%) skewX(-20deg);
+  animation: sheen 3s ease-in-out infinite;
+}
+.btn-roll:disabled::after {
+  animation: none;
+  opacity: 0;
+}
+
+/* Resplandor del número de media (épico/leyenda/élite): el número respira
+   luz propia, no solo el marco de la carta. Reusa --glow por rareza. */
+@keyframes numero-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 6px var(--glow, transparent), 0 0 2px var(--glow, transparent);
+  }
+  50% {
+    text-shadow: 0 0 18px var(--glow, transparent), 0 0 7px var(--glow, transparent);
+  }
+}
+.numero-glow {
+  animation: numero-glow 1.9s ease-in-out infinite;
+}
+
+/* Glow pulsante para cartas épicas / leyenda. */
+@keyframes rarity-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 14px -2px var(--glow, #fff),
+      inset 0 0 10px -6px var(--glow, #fff);
+  }
+  50% {
+    box-shadow: 0 0 28px 2px var(--glow, #fff),
+      inset 0 0 16px -4px var(--glow, #fff);
+  }
+}
+.rarity-pulse {
+  animation: rarity-pulse 1.9s ease-in-out infinite;
+}
+
+/* Cartas del ROLL apareciendo de a una, con overshoot. */
+@keyframes card-reveal {
+  0% {
+    transform: translateY(16px) scale(0.9);
+    opacity: 0;
+  }
+  70% {
+    transform: translateY(-3px) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+.card-in {
+  animation: card-reveal 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Un jugador entrando a su hueco: cae desplazado y rebota al asentarse. */
+@keyframes slot-drop {
+  0% {
+    transform: translateY(-14px) scale(0.72);
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  72% {
+    transform: translateY(2px) scale(1.08);
+  }
+  86% {
+    transform: translateY(-1px) scale(0.97);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+.slot-drop {
+  animation: slot-drop 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Media del equipo apareciendo en el resumen. */
+@keyframes count-glow {
+  0% {
+    transform: scale(0.55);
+    opacity: 0;
+    text-shadow: 0 0 0 rgba(255, 210, 63, 0);
+  }
+  60% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    text-shadow: 0 0 26px rgba(255, 210, 63, 0.85);
+  }
+}
+.count-glow {
+  animation: count-glow 720ms ease-out both;
+}
+
+/* ¡GOL! El número del marcador pega un salto grande con destello y rebote. */
+@keyframes gol-marcador {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+    text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  14% {
+    transform: scale(1.9) rotate(-5deg);
+    filter: brightness(2.8) saturate(1.6);
+    text-shadow: 0 0 34px #fff, 0 0 60px var(--gol-color, #c6ff3d);
+  }
+  32% {
+    transform: scale(0.82) rotate(4deg);
+  }
+  50% {
+    transform: scale(1.28) rotate(-2deg);
+    text-shadow: 0 0 24px var(--gol-color, #c6ff3d);
+  }
+  68% {
+    transform: scale(0.94) rotate(1deg);
+  }
+  84% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    filter: brightness(1);
+    text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+.gol-marcador {
+  animation: gol-marcador 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* La caja del marcador flashea fuerte con el color del equipo, y pulsa un
+   anillo hacia afuera. */
+@keyframes gol-caja {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0),
+      0 0 0 0 var(--gol-color, #c6ff3d);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  16% {
+    box-shadow: 0 0 60px 6px var(--gol-color, #c6ff3d),
+      0 0 0 8px rgba(255, 255, 255, 0.25);
+    border-color: var(--gol-color, #c6ff3d);
+  }
+  55% {
+    box-shadow: 0 0 24px 2px var(--gol-color, #c6ff3d),
+      0 0 0 22px rgba(255, 255, 255, 0);
+    border-color: var(--gol-color, #c6ff3d);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0), 0 0 0 30px rgba(255, 255, 255, 0);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+.gol-caja {
+  animation: gol-caja 1100ms ease-out;
+}
+
+/* Overlay de celebración: "¡GOL!" gigante con estallido, sobre el marcador.
+   No bloquea la interacción y se va solo. */
+@keyframes gol-overlay {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.3) rotate(-8deg);
+    filter: blur(10px);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(0) scale(1.14) rotate(2deg);
+    filter: blur(0);
+  }
+  26% {
+    transform: scale(0.97) rotate(-1deg);
+  }
+  38% {
+    transform: scale(1.04) rotate(0);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+    filter: blur(4px);
+  }
+}
+.gol-overlay {
+  animation: gol-overlay 1900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes gol-estallido {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+.gol-overlay::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 260px;
+  height: 260px;
+  margin: -130px 0 0 -130px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    var(--gol-color, #c6ff3d) 0%,
+    rgba(255, 255, 255, 0.35) 32%,
+    transparent 68%
+  );
+  animation: gol-estallido 900ms ease-out both;
+  pointer-events: none;
+}
+.gol-overlay-titulo {
+  font-family: var(--font-display), "Arial Narrow", sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 0.9;
+  background-image: linear-gradient(
+    100deg,
+    #fff,
+    var(--gol-color, #c6ff3d) 45%,
+    #fff
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px var(--gol-color, #c6ff3d));
+}
+
+/* Pateador actual de la tanda: entra con slide + escala. */
+@keyframes penal-kicker-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.penal-kicker {
+  animation: penal-kicker-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.penal-kicker.tenso {
+  animation: penal-kicker-in 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes penal-kicker-decisivo {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.85);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08);
+  }
+  70% {
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.penal-kicker.decisivo {
+  animation: penal-kicker-decisivo 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes penal-decisivo-pulso {
+  0%,
+  100% {
+    box-shadow: 0 0 12px -2px rgba(255, 210, 63, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30px 2px rgba(255, 210, 63, 0.95);
+  }
+}
+.penal-kicker.decisivo {
+  border-color: #ffd23f;
+}
+.penal-kicker.decisivo .penal-kicker-pulso {
+  animation: penal-decisivo-pulso 1s ease-in-out infinite;
+}
+
+/* Rayas de césped para la cancha. */
+.pitch-stripes {
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.055) 0 7.5%,
+    transparent 7.5% 15%
+  );
+}
+
+/* Contorno negro sutil para nombres: resaltan sobre el fondo sin ensuciar
+   la estética (1px en 4 direcciones + un halo muy suave). */
+.txt-contorno {
+  text-shadow:
+    -1px 0 0 #000,
+    1px 0 0 #000,
+    0 -1px 0 #000,
+    0 1px 0 #000,
+    0 0 3px rgba(0, 0, 0, 0.55);
+}
+
+/* Texto con relleno degradado verde -> dorado. */
+.text-neon {
+  background-image: linear-gradient(
+    90deg,
+    #34d399,
+    var(--c-gold) 52%,
+    var(--c-green-bright)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- Cartas de élite: media > GAME_CONFIG.elite.umbralMedia ---- *
+ * Único lugar donde se permite multicolor: borde iridiscente que
+ * cicla el tono + barrido holográfico. Deja claro que es categoría
+ * especial. Las cartas normales quedan en verde/dorado/gris.        */
+@keyframes holo-hue {
+  to {
+    filter: hue-rotate(360deg) saturate(var(--holo-sat, 1.45));
+  }
+}
+.card-elite {
+  position: relative;
+  isolation: isolate;
+  box-shadow: 0 0 22px -6px rgba(255, 255, 255, 0.35);
+}
+.card-elite::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: var(--holo-borde, 3px);
+  background: conic-gradient(
+    from 210deg,
+    #ff2d95,
+    #ffd23f,
+    #22e0c8,
+    #7c3aed,
+    #10e06a,
+    #ff8a3d,
+    #ff2d95
+  );
+  filter: saturate(var(--holo-sat, 1.45));
+  animation: holo-hue var(--holo-speed, 4s) linear infinite;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.card-elite::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.45) 48%,
+    rgba(255, 255, 255, 0.06) 52%,
+    transparent 62%
+  );
+  background-size: 220% 100%;
+  animation: sweep var(--holo-sweep, 3s) ease-in-out infinite;
+  mix-blend-mode: overlay;
+}
+
+/* Media exactamente 100: multicolor, pero un escalón por debajo de >100:
+   tono más calmo, giro de color lento, borde fino, aura suave. */
+.card-elite.elite-100 {
+  --holo-sat: 1.12;
+  --holo-speed: 7s;
+  --holo-sweep: 5s;
+  --holo-borde: 2px;
+  box-shadow: 0 0 16px -6px rgba(255, 255, 255, 0.28);
+}
+
+/* Media >= 105: multicolor al máximo: color saturadísimo, giro rápido,
+   borde grueso y aura doble (blanca + violeta). */
+.card-elite.elite-max {
+  --holo-sat: 1.85;
+  --holo-speed: 2.4s;
+  --holo-sweep: 2s;
+  --holo-borde: 4px;
+  box-shadow: 0 0 36px -3px rgba(255, 255, 255, 0.6),
+    0 0 66px -10px rgba(124, 58, 237, 0.55);
+}
+
+/* ---- Revelación de cartas del ROLL, graduada por nivel (común -> élite) --- *
+ * `.anticipando` es el resplandor que "se acelera" mientras se espera a que
+ * la carta se revele; la duración (más larga cuanto más alto el nivel) se
+ * fija inline vía `animation-duration`. `--glow` ya lo setea PlayerCard/estas
+ * clases con el color del nivel (ver `game/rarity.ts`).                     */
+@keyframes anticipacion-build {
+  0% {
+    box-shadow: 0 0 0 0 var(--glow, transparent);
+    filter: brightness(0.95);
+    transform: scale(1);
+  }
+  15% {
+    box-shadow: 0 0 6px 0 var(--glow, transparent);
+    filter: brightness(1.02);
+  }
+  30% {
+    box-shadow: 0 0 4px 0 var(--glow, transparent);
+    filter: brightness(0.98);
+  }
+  45% {
+    box-shadow: 0 0 14px 1px var(--glow, transparent);
+    filter: brightness(1.12);
+    transform: scale(1.01);
+  }
+  60% {
+    box-shadow: 0 0 8px 0 var(--glow, transparent);
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  75% {
+    box-shadow: 0 0 26px 3px var(--glow, transparent);
+    filter: brightness(1.3);
+    transform: scale(1.02);
+  }
+  88% {
+    box-shadow: 0 0 16px 1px var(--glow, transparent);
+    filter: brightness(1.1);
+  }
+  100% {
+    box-shadow: 0 0 48px 8px var(--glow, transparent);
+    filter: brightness(1.75);
+    transform: scale(1.05);
+  }
+}
+.anticipando {
+  animation-name: anticipacion-build;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  border-color: var(--glow, transparent) !important;
+}
+
+/* Chispa individual: sale disparada desde el centro y se apaga. */
+@keyframes spark-fly {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angulo)) translateY(0) scale(0.4);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angulo)) translateY(-30px) scale(1);
+  }
+}
+.spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--spark-color, #fff);
+  box-shadow: 0 0 6px 1px var(--spark-color, #fff);
+  opacity: 0;
+  animation: spark-fly 520ms ease-out forwards;
+}
+
+/* Revelación final más grande: sobre-escala y frenada más largas que
+   `.slam`, para leyenda/élite. Misma forma, más intensidad y duración. */
+@keyframes slam-grande {
+  0% {
+    transform: scale(1.55) rotate(-6deg);
+    filter: brightness(2.6) saturate(1.9);
+  }
+  28% {
+    transform: scale(0.85) rotate(3deg);
+    filter: brightness(1.4);
+  }
+  52% {
+    transform: scale(1.12) rotate(-2deg);
+  }
+  74% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    filter: brightness(1);
+  }
+}
+.slam-grande {
+  animation: slam-grande 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.slam-elite {
+  animation: slam-grande 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Estallido de luz más grande/brillante que `.burst`, para leyenda/élite. */
+.burst-fuerte::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, #fff, var(--glow, #fff) 40%, transparent 75%);
+  animation: burst 620ms ease-out forwards;
+}
+.burst-elite::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, #fff, var(--glow, #fff) 45%, transparent 82%);
+  animation: burst 850ms ease-out forwards;
+}
+
+/* ---- Marco dorado para cartas "míticas" (media == bandasCarta.mitico) ---- *
+ * Escalón inmediatamente por debajo de élite: un marco de oro que respira,
+ * más sobrio que el borde iridiscente de élite. Mismo truco de máscara que
+ * `.card-elite::before` (anillo recortado al borde). */
+@keyframes marco-oro-pulso {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1.05);
+  }
+  50% {
+    filter: brightness(1.4) saturate(1.35);
+  }
+}
+.marco-oro {
+  position: relative;
+  isolation: isolate;
+}
+.marco-oro::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from 210deg,
+    #ffd23f,
+    #fff3c4,
+    #b8860b,
+    #ffd23f,
+    #fff8dc,
+    #ffd23f
+  );
+  animation: marco-oro-pulso 2.4s ease-in-out infinite;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* ---- Expulsión: roja directa o doble amarilla ---- *
+ * `.expulsion-anim` se dispara UNA vez, en el momento de la expulsión: la
+ * carta tiembla fuerte y estalla en rojo. `.carta-expulsada` es el estado
+ * persistente después: la carta queda apagada, con banda roja diagonal, para
+ * que se lea de un vistazo que ese jugador ya no está. */
+@keyframes expulsion-sacudon {
+  0% {
+    transform: translateX(0) rotate(0);
+  }
+  10% {
+    transform: translateX(-6px) rotate(-5deg) scale(1.08);
+  }
+  20% {
+    transform: translateX(6px) rotate(5deg) scale(1.08);
+  }
+  30% {
+    transform: translateX(-5px) rotate(-4deg) scale(1.05);
+  }
+  40% {
+    transform: translateX(5px) rotate(4deg) scale(1.05);
+  }
+  55% {
+    transform: translateX(-3px) rotate(-2deg);
+  }
+  70% {
+    transform: translateX(3px) rotate(2deg);
+  }
+  85% {
+    transform: translateX(-1px);
+  }
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+}
+@keyframes expulsion-flash {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.35;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.expulsion-anim {
+  animation: expulsion-sacudon 1200ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  z-index: 30;
+}
+.expulsion-anim::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 40;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 45%, #fff 0%, #ff2d2d 35%, transparent 75%);
+  box-shadow: 0 0 30px 8px rgba(220, 38, 38, 0.9);
+  animation: expulsion-flash 1200ms ease-out both;
+}
+.carta-expulsada {
+  filter: grayscale(0.9) brightness(0.55) contrast(0.95);
+  border-color: #dc2626 !important;
+  box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.7),
+    0 0 16px -4px rgba(220, 38, 38, 0.7) !important;
+}
+.carta-expulsada::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(220, 38, 38, 0.4) 0 5px,
+    transparent 5px 15px
+  );
+}
+
+/* ---- Golpe al OVR del equipo cuando cae una expulsión ---- *
+ * El número del OVR salta, se tiñe de rojo y "cae" a un valor más chico.
+ * Se remonta por `key` (igual que el marcador con el gol) para reproducirlo. */
+@keyframes ovr-baja {
+  0% {
+    transform: scale(1);
+    color: #ff5a5a;
+    text-shadow: 0 0 0 rgba(255, 90, 90, 0);
+  }
+  15% {
+    transform: scale(1.55) translateY(-4px) rotate(-3deg);
+    color: #ff2d2d;
+    text-shadow: 0 0 22px #ff2d2d, 0 0 40px rgba(220, 38, 38, 0.8);
+  }
+  35% {
+    transform: scale(0.86) translateY(3px) rotate(2deg);
+  }
+  55% {
+    transform: scale(1.12) translateY(0) rotate(-1deg);
+    color: #ff7a7a;
+  }
+  75% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 0 rgba(255, 90, 90, 0);
+  }
+}
+/* Sin `both`: al terminar, el número vuelve al color de su clase. */
+.ovr-baja {
+  animation: ovr-baja 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* El "-N" que se desprende del OVR y sube desvaneciéndose. */
+@keyframes ovr-delta-fly {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-26px) scale(1);
+  }
+}
+.ovr-delta {
+  animation: ovr-delta-fly 1400ms ease-out both;
+}
+
+/* Cartel rojo de expulsión: entra de golpe, se sostiene y se va. */
+@keyframes expulsion-banner {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.85);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+  }
+  20% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+}
+.expulsion-banner {
+  animation: expulsion-banner 2600ms ease-in-out both;
+}
+
+/* ---- Celebración de victoria / podio (ver `VictoriaCelebracion`) ---- *
+ * Un mismo sistema para ambas: confeti + destello + (en los niveles altos)
+ * una sacudida sutil de pantalla. La intensidad (tamaño, cantidad de
+ * confeti, color) la gradúa el componente por nivel; acá solo vive el CÓMO
+ * se mueve cada pieza. */
+@keyframes confeti-caida {
+  0% {
+    transform: translateY(-40px) rotate(var(--rot, 0deg));
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(280px) rotate(calc(var(--rot, 0deg) + 540deg));
+    opacity: 0;
+  }
+}
+.confeti-pieza {
+  position: absolute;
+  top: 0;
+  left: var(--left, 50%);
+  width: 8px;
+  height: 14px;
+  background: var(--color, #ffd23f);
+  border-radius: 2px;
+  animation: confeti-caida 1900ms ease-in var(--delay, 0ms) both;
+}
+
+/* Destello radial detrás del título: crece y se apaga. */
+@keyframes victoria-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+.victoria-glow {
+  position: absolute;
+  inset: -25%;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    var(--victoria-color, #ffd23f) 0%,
+    rgba(255, 255, 255, 0.3) 35%,
+    transparent 70%
+  );
+  animation: victoria-glow 1300ms ease-out both;
+  pointer-events: none;
+}
+
+/* Título: entra con sobre-escala y rebote; `--escala` gradúa cuánto más
+   grande queda al asentarse según el nivel. */
+@keyframes victoria-titulo-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) translateY(10px) rotate(-6deg);
+    filter: blur(8px);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(calc(var(--escala, 1) * 1.08)) rotate(2deg);
+    filter: blur(0);
+  }
+  75% {
+    transform: scale(calc(var(--escala, 1) * 0.97)) rotate(-1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(var(--escala, 1)) rotate(0);
+  }
+}
+.victoria-titulo {
+  position: relative;
+  animation: victoria-titulo-in 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  font-family: var(--font-display), "Arial Narrow", sans-serif;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 0.04em;
+  background-image: linear-gradient(100deg, #fff, var(--victoria-color, #ffd23f) 45%, #fff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px var(--victoria-color, #ffd23f));
+}
+
+/* Sacudida sutil de pantalla, solo en los niveles más altos (podio). */
+@keyframes victoria-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-3px, 2px);
+  }
+  40% {
+    transform: translate(3px, -2px);
+  }
+  60% {
+    transform: translate(-2px, -1px);
+  }
+  80% {
+    transform: translate(2px, 1px);
+  }
+}
+.victoria-shake {
+  animation: victoria-shake 420ms ease-in-out both;
+}
+
+/* Rayos girando detrás del logro de podio: un extra por encima del destello
+   normal, solo para bronce/plata/campeón. */
+@keyframes podio-rayos {
+  0% {
+    opacity: 0;
+    transform: rotate(0deg) scale(0.85);
+  }
+  25% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(35deg) scale(1.25);
+  }
+}
+.podio-rayos {
+  position: absolute;
+  inset: -35%;
+  background: repeating-conic-gradient(
+    rgba(255, 255, 255, 0.32) 0deg 6deg,
+    transparent 6deg 30deg
+  );
+  animation: podio-rayos 2400ms ease-out both;
+  pointer-events: none;
+}
+
+/* Trofeo del 1º puesto: además de todo lo anterior, respira y brilla. */
+@keyframes podio-trofeo {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 10px rgba(255, 210, 63, 0.7));
+  }
+  50% {
+    transform: scale(1.14) rotate(-4deg);
+    filter: drop-shadow(0 0 22px rgba(255, 210, 63, 1));
+  }
+}
+.podio-trofeo {
+  display: inline-block;
+  animation: podio-trofeo 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  body::before {
+    display: none;
+  }
+}
