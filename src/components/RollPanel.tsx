@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BanderaPais } from "@/components/BanderaPais";
 import { useAtencionBoton } from "@/components/juego/useAtencionBoton";
+import { useAyuda } from "@/components/ui/Ayuda";
 import { GAME_CONFIG } from "@/game/config";
 import { MUNDIALES, SELECCIONES } from "@/data/players";
 import { BANDERAS_SVG } from "@/data/banderasSvg";
@@ -195,6 +196,10 @@ export function RollPanel({
   );
   const claseAtencion = atento ? "atencion-pulso" : "";
 
+  const ayudaPais = useAyuda("Sortear otro país");
+  const ayudaAnio = useAyuda("Sortear otro año");
+  const ayudaRoll = useAyuda("Sortear jugador");
+
   return (
     <aside className="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-black/40 p-3 backdrop-blur">
       {roll ? (
@@ -209,9 +214,11 @@ export function RollPanel({
               }}
               onMouseEnter={marcarActividad}
               disabled={girando || sinResorteos}
-              className={`rounded-xl border-2 border-emerald-400/60 bg-emerald-500/10 px-1.5 py-2 font-display text-[10px] font-bold uppercase leading-tight tracking-wide text-emerald-200 transition duration-200 ease-out active:scale-95 enabled:hover:scale-[1.04] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-zinc-800/60 disabled:text-zinc-500 ${claseAtencion}`}
+              {...ayudaPais.trigger}
+              className={`relative rounded-xl border-2 border-emerald-400/60 bg-emerald-500/10 px-1.5 py-2 font-display text-[10px] font-bold uppercase leading-tight tracking-wide text-emerald-200 transition duration-200 ease-out active:scale-95 enabled:hover:scale-[1.04] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-zinc-800/60 disabled:text-zinc-500 ${claseAtencion}`}
             >
               🎲 Volver a sortear país
+              {ayudaPais.burbuja}
             </button>
             <button
               type="button"
@@ -221,9 +228,11 @@ export function RollPanel({
               }}
               onMouseEnter={marcarActividad}
               disabled={girando || sinResorteos}
-              className={`rounded-xl border-2 border-[#ffd23f]/60 bg-[#ffd23f]/10 px-1.5 py-2 font-display text-[10px] font-bold uppercase leading-tight tracking-wide text-[#ffe89b] transition duration-200 ease-out active:scale-95 enabled:hover:scale-[1.04] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-zinc-800/60 disabled:text-zinc-500 ${claseAtencion}`}
+              {...ayudaAnio.trigger}
+              className={`relative rounded-xl border-2 border-[#ffd23f]/60 bg-[#ffd23f]/10 px-1.5 py-2 font-display text-[10px] font-bold uppercase leading-tight tracking-wide text-[#ffe89b] transition duration-200 ease-out active:scale-95 enabled:hover:scale-[1.04] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-zinc-800/60 disabled:text-zinc-500 ${claseAtencion}`}
             >
               🎲 Volver a sortear año
+              {ayudaAnio.burbuja}
             </button>
           </div>
           <div
@@ -247,6 +256,7 @@ export function RollPanel({
           }}
           onMouseEnter={marcarActividad}
           disabled={!puedeRollear}
+          {...ayudaRoll.trigger}
           className={`btn-roll relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 py-4 text-2xl font-display font-bold uppercase tracking-[0.28em] text-white shadow-[0_0_30px_-4px_rgba(16,185,129,0.95)] transition duration-200 ease-out active:scale-95 enabled:hover:scale-[1.03] disabled:cursor-not-allowed disabled:border-white/5 disabled:from-zinc-700 disabled:via-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 disabled:shadow-none ${
             puedeRollear ? "ring-pulse" : ""
           } ${claseAtencion}`}
@@ -255,6 +265,7 @@ export function RollPanel({
             🎲
           </span>
           Roll
+          {ayudaRoll.burbuja}
         </button>
       )}
 

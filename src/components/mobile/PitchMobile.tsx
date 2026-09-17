@@ -4,6 +4,7 @@ import { PlayerCard } from "@/components/PlayerCard";
 import { PlayerSilhouette } from "@/components/PlayerSilhouette";
 import {
   idsSuplentes,
+  mediaEfectiva,
   slotsCompatibles,
   slotsDisponibles,
 } from "@/game/squad";
@@ -23,6 +24,17 @@ const LINEAS: PosicionGenerica[] = [
   "Defensa",
   "Arquero",
 ];
+
+// Tailwind no detecta clases armadas con template strings (`grid-cols-${n}`)
+// porque su análisis estático busca el texto literal — por eso esta tabla usa
+// nombres de clase completos, ya presentes en el theme por defecto.
+const GRID_COLS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-5",
+};
 
 interface PitchMobileProps {
   squad: SquadState;
@@ -73,7 +85,10 @@ export function PitchMobile({
           const slots = squad.slots.filter((s) => s.posicion === linea);
           if (slots.length === 0) return null;
           return (
-            <div key={linea} className="flex flex-wrap justify-center gap-2">
+            <div
+              key={linea}
+              className={`grid ${GRID_COLS[slots.length] ?? "grid-cols-1"} gap-2`}
+            >
               {slots.map((s) => {
                 const carta = squad.titulares[s.id];
                 const estaSeleccionado = s.id === seleccionadoSlotId;
@@ -93,26 +108,27 @@ export function PitchMobile({
                     <PlayerCard
                       player={carta}
                       variante="mini"
-                      tamanoMini="chico"
+                      tamanoMini="chicoFluido"
                       seleccionada={estaSeleccionado}
                       goles={golesPorJugador?.[carta.id] ?? 0}
                       asistencias={asistenciasPorJugador?.[carta.id] ?? 0}
                       tarjetas={tarjetasPorJugador?.[carta.id]}
                       expulsado={expulsadosPorJugador?.has(carta.id) ?? false}
+                      mediaEnPosicion={mediaEfectiva(carta, s)}
                       onClick={soloLectura ? undefined : () => onSlot(s.id)}
                     />
                   </div>
                 ) : soloLectura ? (
                   <div
                     key={s.id}
-                    className="h-[119px] w-[103px] rounded-md border-2 border-dashed border-white/15 bg-black/20"
+                    className="h-[119px] w-full max-w-[103px] mx-auto rounded-md border-2 border-dashed border-white/15 bg-black/20"
                   />
                 ) : (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => onSlot(s.id)}
-                    className={`flex h-[119px] w-[103px] flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed font-display text-[11px] font-black uppercase tracking-wide transition ${
+                    className={`flex h-[119px] w-full max-w-[103px] mx-auto flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed font-display text-[11px] font-black uppercase tracking-wide transition ${
                       esCompatible
                         ? "animate-pulse border-[#c6ff3d] bg-[#c6ff3d]/25 text-[#eaffc2] shadow-[0_0_16px_rgba(198,255,61,0.7)]"
                         : esDisponible
@@ -136,7 +152,7 @@ export function PitchMobile({
         <div className="mb-1 text-center font-display text-[10px] font-semibold uppercase tracking-[0.28em] text-emerald-300/80">
           Banco
         </div>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {idsSuplentes().map((id, i) => {
             const carta = squad.suplentes[i];
             const estaSeleccionado = id === seleccionadoSlotId;
@@ -156,7 +172,7 @@ export function PitchMobile({
                   <PlayerCard
                     player={carta}
                     variante="mini"
-                    tamanoMini="chico"
+                    tamanoMini="banco"
                     seleccionada={estaSeleccionado}
                     onClick={() => onSlot(id)}
                   />
@@ -167,7 +183,7 @@ export function PitchMobile({
                 key={id}
                 type="button"
                 onClick={() => onSlot(id)}
-                className={`flex h-[119px] w-[103px] shrink-0 flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed font-display text-[11px] font-black uppercase tracking-wide transition ${
+                className={`flex h-[100px] w-[85px] shrink-0 flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed font-display text-[11px] font-black uppercase tracking-wide transition ${
                   esDisponible
                     ? "animate-pulse border-[#c6ff3d] bg-[#c6ff3d]/20 text-[#eaffc2] shadow-[0_0_16px_rgba(198,255,61,0.6)]"
                     : "border-white/20 bg-black/25 text-white/55"

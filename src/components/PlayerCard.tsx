@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BanderaPais } from "@/components/BanderaPais";
 import { PlayerSilhouette } from "@/components/PlayerSilhouette";
 import { SoccerBall } from "@/components/SoccerBall";
 import { SoccerBoot } from "@/components/SoccerBoot";
@@ -156,11 +157,21 @@ const POS_BADGE =
 interface PlayerCardProps {
   player: Player;
   variante?: "full" | "mini";
-  /** Solo aplica a "mini": "chico" para dos canchas lado a lado (móvil);
-   *  "compacto" para la cancha de escritorio normal; "compactoAjustado" para
-   *  la cancha de escritorio "chica" (dos lado a lado) — más angosta que
-   *  "compacto" para que las líneas de 4-5 jugadores no se superpongan. */
-  tamanoMini?: "normal" | "chico" | "compacto" | "compactoAjustado";
+  /** Solo aplica a "mini": "chico" para tiras horizontales en móvil (resumen
+   *  de torneo); "chicoFluido" para la cancha de celular (grilla por línea de
+   *  formación, ancho fluye hasta un máximo); "banco" para el banco de
+   *  suplentes en móvil (tira con scroll horizontal, un poco más chico que
+   *  "chico" para que entren más cartas a la vista); "compacto" para la
+   *  cancha de escritorio normal; "compactoAjustado" para la cancha de
+   *  escritorio "chica" (dos lado a lado) — más angosta que "compacto" para
+   *  que las líneas de 4-5 jugadores no se superpongan. */
+  tamanoMini?:
+    | "normal"
+    | "chico"
+    | "chicoFluido"
+    | "banco"
+    | "compacto"
+    | "compactoAjustado";
   seleccionada?: boolean;
   /** Goles marcados: una pelotita por gol sobre la carta. */
   goles?: number;
@@ -171,6 +182,10 @@ interface PlayerCardProps {
   tarjetas?: { amarillas: number; roja: boolean };
   /** El jugador está expulsado en el partido en curso (roja directa o doble amarilla). */
   expulsado?: boolean;
+  /** Media ya penalizada para el hueco donde está colocado (ver `mediaEfectiva`
+   *  en `game/squad.ts`). Si es menor a `player.media`, la carta se tiñe de
+   *  rojo y se muestra este número en vez de la media natural del jugador. */
+  mediaEnPosicion?: number;
   onClick?: () => void;
 }
 
@@ -183,8 +198,12 @@ export function PlayerCard({
   asistencias = 0,
   tarjetas,
   expulsado = false,
+  mediaEnPosicion,
   onClick,
 }: PlayerCardProps) {
+  const fueraDePosicion =
+    mediaEnPosicion != null && mediaEnPosicion < player.media;
+  const mediaMostrada = mediaEnPosicion ?? player.media;
   const nivel: NivelCarta = nivelCarta(player.media);
   const esMulti =
     nivel === "mitico" || nivel === "elite" || nivel === "eliteMax";
@@ -215,54 +234,81 @@ export function PlayerCard({
   } as React.CSSProperties;
 
   if (variante === "mini") {
-    const chico = tamanoMini === "chico";
+    const banco = tamanoMini === "banco";
+    const chico =
+      tamanoMini === "chico" || tamanoMini === "chicoFluido" || banco;
+    const chicoFluido = tamanoMini === "chicoFluido";
     const compactoAjustado = tamanoMini === "compactoAjustado";
-    const compacto = tamanoMini === "compacto" || compactoAjustado;
+    const compacto = tamanoMini === "compacto" || compactoAjustado || banco;
     const { primerNombre, apellido: ape } = partirNombre(player.nombre);
     // +~0.5cm (≈19px) en cada dimensión respecto del tamaño original, para
     // que las cartas ya colocadas (titular/banco) tengan más presencia.
     // "compactoAjustado" gana lo mismo en alto pero bastante menos en ancho:
     // en la cancha "chica" (dos lado a lado) una línea de 4-5 jugadores no
     // tiene margen para el ancho completo sin superponerse.
+    // "chicoFluido" (cancha de celular): el alto queda fijo, pero el ancho es
+    // fluido (llena su columna de la grilla de esa línea, hasta un máximo de
+    // 103px) — así una línea de 5 en un celular angosto encoge para entrar
+    // en una sola fila, en vez de desbordar o partirse en dos filas. "chico"
+    // a secas (tiras horizontales con scroll) mantiene el ancho fijo de
+    // siempre; "banco" es una versión un poco más chica de esa misma tira,
+    // para que entren más suplentes a la vista sin scrollear tanto.
     const dims = compactoAjustado
       ? "h-[99px] w-[70px]"
-      : compacto
-        ? "h-[99px] w-[81px]"
-        : chico
-          ? "h-[119px] w-[103px]"
-          : "h-[106px] w-[88px]";
+      : banco
+        ? "h-[100px] w-[85px]"
+        : compacto
+          ? "h-[99px] w-[81px]"
+          : chicoFluido
+            ? "h-[119px] w-full max-w-[103px] mx-auto"
+            : chico
+              ? "h-[119px] w-[103px]"
+              : "h-[106px] w-[88px]";
+    // En touch, `:hover` puede quedar "pegado" tras un tap (no hay mouse real
+    // que se retire), agrandando la carta sin que el usuario la esté tocando.
+    // Los tamaños exclusivos de celular solo agrandan en dispositivos que
+    // realmente soportan hover (mouse); en escritorio (compacto/compactoAjustado)
+    // el hover-grow de siempre queda intacto.
+    const hoverClases = chico
+      ? "[@media(hover:hover)]:hover:z-10 [@media(hover:hover)]:hover:scale-[1.08]"
+      : "hover:z-10 hover:scale-[1.08]";
     return (
       <button
         type="button"
         onClick={onClick}
         disabled={!clickable}
         style={style}
-        className={`relative flex shrink-0 ${dims} flex-col items-center justify-between rounded-md border text-center transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.08] ${
+        className={`relative flex shrink-0 ${dims} flex-col items-center justify-between rounded-md border text-center transition-transform duration-200 ease-out ${hoverClases} ${
           compacto ? "gap-0 px-1 py-1" : "gap-0.5 px-1.5 py-1.5"
         } ${
           esMulti
             ? `card-elite border-transparent bg-zinc-950 ${mui!.clase}`
             : `bg-gradient-to-b ${ui.borde} ${ui.fondo} ${ui.miniBrillo} ${ui.marco}`
         } ${seleccionada ? "ring-2 ring-white/90 brightness-110" : ""} ${
+          fueraDePosicion ? "!border-red-500/80" : ""
+        } ${
           clickable ? "cursor-pointer hover:brightness-110" : "cursor-default"
         } ${expClases}`}
       >
+        {fueraDePosicion && (
+          <div className="pointer-events-none absolute inset-0 rounded-md bg-red-600/25" />
+        )}
         {goles > 0 && <GolesPelotas goles={goles} />}
         {tarjetas && (tarjetas.amarillas > 0 || tarjetas.roja) && (
           <TarjetasCarta tarjetas={tarjetas} />
         )}
         {asistencias > 0 && <BotinAsistencias cantidad={asistencias} />}
-        <div className="flex w-full items-center justify-between gap-1">
+        <div className="relative flex w-full items-center justify-between gap-1">
           <span
             className={`font-display font-bold leading-none ${
-              compacto
-                ? `${esMulti ? "text-neon" : "text-white"} text-base`
-                : esMulti
-                  ? `text-neon ${mui!.miniNumeroTam}`
-                  : `text-white ${ui.miniNumeroTam}`
-            } ${esMulti ? "numero-glow" : ui.numeroGlow}`}
+              compacto ? "text-base" : esMulti ? mui!.miniNumeroTam : ui.miniNumeroTam
+            } ${
+              fueraDePosicion
+                ? "text-red-400"
+                : `${esMulti ? "text-neon" : "text-white"} ${esMulti ? "numero-glow" : ui.numeroGlow}`
+            }`}
           >
-            {player.media}
+            {mediaMostrada}
           </span>
           <span
             className={`${POS_BADGE} leading-none ${
@@ -284,9 +330,13 @@ export function PlayerCard({
         >
           {ape}
         </span>
-        <span className={compacto ? "text-sm leading-none" : "text-base leading-none"}>
-          {player.bandera}
-        </span>
+        <BanderaPais
+          pais={player.seleccion}
+          className={`inline-block rounded-[2px] border border-black/40 object-cover ${
+            compacto ? "h-[9px] w-[13px]" : "h-[11px] w-4"
+          }`}
+          classNameTexto={`w-full truncate text-center font-display text-[8px] font-bold uppercase leading-none text-zinc-300`}
+        />
       </button>
     );
   }
@@ -353,7 +403,11 @@ export function PlayerCard({
           {player.nombre}
         </div>
         <div className="mt-0.5 flex items-center justify-center gap-1 text-[10px] text-zinc-300">
-          <span>{player.bandera}</span>
+          <BanderaPais
+            pais={player.seleccion}
+            className="inline-block h-[11px] w-4 shrink-0 rounded-[2px] border border-black/40 object-cover"
+            classNameTexto="shrink-0 font-display text-[9px] font-bold uppercase leading-none text-zinc-300"
+          />
           <span className="truncate">
             {player.seleccion} · {player.mundial}
           </span>

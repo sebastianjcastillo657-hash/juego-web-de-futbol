@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SorteoMundial } from "@/components/SorteoMundial";
+import { useAyuda } from "@/components/ui/Ayuda";
 import { GAME_CONFIG } from "@/game/config";
 import { etiquetaRareza } from "@/game/rarity";
 import { mediaDelEquipo, mediaEfectiva } from "@/game/squad";
@@ -53,6 +54,7 @@ function useCountUp(target: number, ms = 900): number {
 }
 
 export function SquadSummary({ squad, onReiniciar, onSorteoListo }: SquadSummaryProps) {
+  const ayudaNuevoPlantel = useAyuda("Empezar un plantel nuevo desde cero");
   const media = mediaDelEquipo(squad);
   const mediaAnimada = useCountUp(media);
   const titulares = squad.slots
@@ -112,9 +114,11 @@ export function SquadSummary({ squad, onReiniciar, onSorteoListo }: SquadSummary
         <button
           type="button"
           onClick={onReiniciar}
-          className="rounded-lg border border-white/15 px-6 py-1.5 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400 transition hover:border-emerald-400/50 hover:text-white"
+          {...ayudaNuevoPlantel.trigger}
+          className="relative rounded-lg border border-white/15 px-6 py-1.5 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400 transition hover:border-emerald-400/50 hover:text-white"
         >
           Nuevo plantel
+          {ayudaNuevoPlantel.burbuja}
         </button>
       </div>
     </div>
@@ -156,11 +160,11 @@ function Fila({
       </span>
       <span
         className={`w-9 shrink-0 text-right font-display font-bold tabular-nums ${
-          esElite ? "text-neon" : RAREZA_COLOR[player.rareza]
+          penalizado ? "text-red-400" : esElite ? "text-neon" : RAREZA_COLOR[player.rareza]
         }`}
       >
         {mediaMostrada}
-        {penalizado && <span className="ml-0.5 text-[10px] text-red-400">▼</span>}
+        {penalizado && <span className="ml-0.5 text-[10px]">▼</span>}
       </span>
       <span>{player.bandera}</span>
       <span className="truncate">{player.nombre}</span>

@@ -6,6 +6,7 @@ import { MundialPartidosMobile } from "@/components/mobile/MundialPartidosMobile
 import { PartidoEnVivoMobile } from "@/components/mobile/PartidoEnVivoMobile";
 import { PitchMobile } from "@/components/mobile/PitchMobile";
 import { PostPartidoMobile } from "@/components/mobile/PostPartidoMobile";
+import { useAyuda } from "@/components/ui/Ayuda";
 import { logroDe } from "@/game/mundial";
 import { mediaDelEquipo } from "@/game/squad";
 import type { Player, PartidoPreparado, SquadState } from "@/types";
@@ -46,6 +47,12 @@ export function MundialScreenMobile({
     manejarFinPartido,
   } = useMundial(mundial, partidos, squad, etapaInicial);
 
+  const ayudaNuevoPlantel = useAyuda("Empezar un plantel nuevo desde cero");
+  const ayudaVerResumen = useAyuda("Ver el resumen final del Mundial");
+  const ayudaJugar = useAyuda(
+    actual ? `Empezar el partido ${actual.numero}` : "Empezar el partido",
+  );
+
   // Resumen final del recorrido.
   if (etapa !== "post" && (etapa === "resumen" || recorridoTerminado)) {
     return (
@@ -56,9 +63,11 @@ export function MundialScreenMobile({
         <button
           type="button"
           onClick={onReiniciar}
-          className="mx-auto rounded-lg border border-white/15 px-6 py-2 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400"
+          {...ayudaNuevoPlantel.trigger}
+          className="relative mx-auto rounded-lg border border-white/15 px-6 py-2 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400"
         >
           Nuevo plantel
+          {ayudaNuevoPlantel.burbuja}
         </button>
       </div>
     );
@@ -139,9 +148,11 @@ export function MundialScreenMobile({
         <button
           type="button"
           onClick={() => setEtapa("resumen")}
-          className="mt-2 rounded-xl border-2 border-[#ffd23f] bg-gradient-to-r from-[#ffd23f] to-[#f5b301] px-6 py-3 font-display text-sm font-bold uppercase tracking-[0.18em] text-black shadow-[0_0_24px_-6px_rgba(255,210,63,0.75)] active:scale-95"
+          {...ayudaVerResumen.trigger}
+          className="relative mt-2 rounded-xl border-2 border-[#ffd23f] bg-gradient-to-r from-[#ffd23f] to-[#f5b301] px-6 py-3 font-display text-sm font-bold uppercase tracking-[0.18em] text-black shadow-[0_0_24px_-6px_rgba(255,210,63,0.75)] active:scale-95"
         >
           Ver resumen final
+          {ayudaVerResumen.burbuja}
         </button>
       </div>
     );
@@ -204,9 +215,11 @@ export function MundialScreenMobile({
       <button
         type="button"
         onClick={() => setEtapa("jugando")}
-        className="mx-auto rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-8 py-3 font-display text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_26px_-6px_rgba(16,185,129,0.9)] active:scale-95"
+        {...ayudaJugar.trigger}
+        className="relative mx-auto rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-8 py-3 font-display text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_26px_-6px_rgba(16,185,129,0.9)] active:scale-95"
       >
         Jugar partido {actual.numero}
+        {ayudaJugar.burbuja}
       </button>
     </div>
   );

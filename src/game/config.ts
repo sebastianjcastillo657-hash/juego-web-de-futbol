@@ -93,12 +93,19 @@ export const GAME_CONFIG = {
     umbralMedia: 100,
   },
 
-  /** Penalización de media al colocar en una posición que no corresponde. */
+  /**
+   * Penalización de media al colocar en una posición que no corresponde,
+   * graduada según qué tan lejos está esa posición de la natural del jugador
+   * (línea de campo: Defensa-Medio-Delantero). El arco es un caso aparte: es
+   * la incompatibilidad más grande sin importar la distancia de línea.
+   */
   penalizacion: {
-    /** Jugador de campo en una línea de campo equivocada. */
-    posicionIncorrectaCampo: 6,
+    /** Línea de campo adyacente a la natural (Defensa↔Medio, Medio↔Delantero). */
+    lineaCercana: 8,
+    /** Extremos opuestos de las líneas de campo (Defensa↔Delantero). */
+    lineaLejana: 20,
     /** Arquero fuera del arco, o jugador de campo en el arco. */
-    liosConArco: 20,
+    liosConArco: 38,
   },
 
   /**

@@ -6,6 +6,7 @@ import { Pitch } from "@/components/Pitch";
 import { PostPartido } from "@/components/PostPartido";
 import { EVENTO_ICONO } from "@/components/juego/partidoUtil";
 import { useMundial } from "@/components/juego/useMundial";
+import { useAyuda } from "@/components/ui/Ayuda";
 import { logroDe } from "@/game/mundial";
 import { mediaDelEquipo } from "@/game/squad";
 import type { Player, PartidoPreparado, SquadState } from "@/types";
@@ -50,6 +51,12 @@ export function MundialScreen({
     manejarFinPartido,
   } = useMundial(mundial, partidos, squad, etapaInicial);
 
+  const ayudaNuevoPlantel = useAyuda("Empezar un plantel nuevo desde cero");
+  const ayudaVerResumen = useAyuda("Ver el resumen final del Mundial");
+  const ayudaJugar = useAyuda(
+    actual ? `Empezar el partido ${actual.numero}` : "Empezar el partido",
+  );
+
   if (etapa !== "post" && (etapa === "resumen" || recorridoTerminado)) {
     return (
       <div className="mx-auto max-w-7xl space-y-4 p-4">
@@ -61,9 +68,11 @@ export function MundialScreen({
           <button
             type="button"
             onClick={onReiniciar}
-            className="rounded-lg border border-white/15 px-6 py-2 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400 transition hover:border-emerald-400/50 hover:text-white"
+            {...ayudaNuevoPlantel.trigger}
+            className="relative rounded-lg border border-white/15 px-6 py-2 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400 transition hover:border-emerald-400/50 hover:text-white"
           >
             Nuevo plantel
+            {ayudaNuevoPlantel.burbuja}
           </button>
         </div>
       </div>
@@ -142,9 +151,11 @@ export function MundialScreen({
         <button
           type="button"
           onClick={() => setEtapa("resumen")}
-          className="mt-2 rounded-xl border-2 border-[#ffd23f] bg-gradient-to-r from-[#ffd23f] to-[#f5b301] px-8 py-3 font-display text-sm font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_24px_-6px_rgba(255,210,63,0.75)] transition hover:brightness-110 active:scale-95"
+          {...ayudaVerResumen.trigger}
+          className="relative mt-2 rounded-xl border-2 border-[#ffd23f] bg-gradient-to-r from-[#ffd23f] to-[#f5b301] px-8 py-3 font-display text-sm font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_24px_-6px_rgba(255,210,63,0.75)] transition hover:brightness-110 active:scale-95"
         >
           Ver resumen final
+          {ayudaVerResumen.burbuja}
         </button>
       </div>
     );
@@ -208,9 +219,11 @@ export function MundialScreen({
         <button
           type="button"
           onClick={() => setEtapa("jugando")}
-          className="rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-10 py-2.5 font-display text-base font-bold uppercase tracking-[0.28em] text-white shadow-[0_0_26px_-6px_rgba(16,185,129,0.9)] transition active:scale-95"
+          {...ayudaJugar.trigger}
+          className="relative rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-10 py-2.5 font-display text-base font-bold uppercase tracking-[0.28em] text-white shadow-[0_0_26px_-6px_rgba(16,185,129,0.9)] transition active:scale-95"
         >
           Jugar partido {actual.numero}
+          {ayudaJugar.burbuja}
         </button>
       </div>
     </div>

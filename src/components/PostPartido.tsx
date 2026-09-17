@@ -2,6 +2,7 @@
 
 import { EVENTO_ICONO } from "@/components/juego/partidoUtil";
 import { Pitch } from "@/components/Pitch";
+import { useAyuda } from "@/components/ui/Ayuda";
 import type { Player, PartidoMundial, PartidoPreparado, SquadState } from "@/types";
 
 interface PostPartidoProps {
@@ -31,6 +32,7 @@ export function PostPartido({
   onSlot,
   onJugar,
 }: PostPartidoProps) {
+  const ayudaJugar = useAyuda(`Empezar el partido ${actual.numero}`);
   return (
     <div className="mx-auto max-w-3xl space-y-5 p-4">
       {/* ---- Resumen del partido anterior ---- */}
@@ -122,9 +124,11 @@ export function PostPartido({
           <button
             type="button"
             onClick={onJugar}
-            className="rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-10 py-2.5 font-display text-base font-bold uppercase tracking-[0.28em] text-white shadow-[0_0_26px_-6px_rgba(16,185,129,0.9)] transition active:scale-95"
+            {...ayudaJugar.trigger}
+            className="relative rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-10 py-2.5 font-display text-base font-bold uppercase tracking-[0.28em] text-white shadow-[0_0_26px_-6px_rgba(16,185,129,0.9)] transition active:scale-95"
           >
             Jugar partido {actual.numero}
+            {ayudaJugar.burbuja}
           </button>
         </div>
       </div>

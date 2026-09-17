@@ -12,6 +12,7 @@ import {
   claseImpactoRevelado,
 } from "@/components/juego/cartaSilueta";
 import { useJuego } from "@/components/juego/useJuego";
+import { useAyuda } from "@/components/ui/Ayuda";
 import { GAME_CONFIG } from "@/game/config";
 import { glowDeNivel, nivelRevelacion } from "@/game/rarity";
 
@@ -49,6 +50,15 @@ export function DraftScreen() {
     usarSlot,
     terminar,
   } = useJuego();
+
+  const ayudaTerminar = useAyuda(
+    completo ? "Finalizar selección del equipo" : "Completá los 11 titulares y los 5 suplentes",
+  );
+  const ayudaExit = useAyuda("Salir y empezar un plantel nuevo");
+  const ayudaVelocidad = useAyuda("Cambiar la velocidad de la ruleta");
+  const ayudaAutoRoll = useAyuda(
+    "Sortear de nuevo automáticamente al colocar una carta",
+  );
 
   if (!montado) return null;
 
@@ -105,21 +115,25 @@ export function DraftScreen() {
               type="button"
               onClick={terminar}
               disabled={!completo}
-              className={`rounded-xl border-2 font-display font-bold uppercase tracking-[0.2em] transition active:scale-95 ${
+              {...ayudaTerminar.trigger}
+              className={`relative rounded-xl border-2 font-display font-bold uppercase tracking-[0.2em] transition active:scale-95 ${
                 completo
                   ? "border-[#ffd23f] bg-gradient-to-r from-[#ffd23f] to-[#f5b301] py-3.5 text-base text-black shadow-[0_0_26px_-6px_rgba(255,210,63,0.95)] hover:brightness-110"
                   : "cursor-not-allowed border-white/10 bg-zinc-800 py-2 text-sm text-zinc-500"
               }`}
             >
               {completo ? "Terminar" : "Completá 11+5"}
+              {ayudaTerminar.burbuja}
             </button>
 
             <button
               type="button"
               onClick={reiniciar}
-              className="rounded-xl border border-white/15 py-1.5 font-display text-xs font-semibold uppercase tracking-widest text-zinc-300 transition hover:border-emerald-400/60 hover:bg-emerald-500/10 hover:text-white"
+              {...ayudaExit.trigger}
+              className="relative rounded-xl border border-white/15 py-1.5 font-display text-xs font-semibold uppercase tracking-widest text-zinc-300 transition hover:border-emerald-400/60 hover:bg-emerald-500/10 hover:text-white"
             >
               Exit
+              {ayudaExit.burbuja}
             </button>
           </div>
         </div>
@@ -157,23 +171,25 @@ export function DraftScreen() {
               <button
                 type="button"
                 onClick={siguienteVelocidad}
-                title="Velocidad de la ruleta y el reparto de cartas"
-                className="rounded-xl border border-white/15 bg-black/40 py-2 font-display text-[11px] font-bold uppercase tracking-widest text-emerald-300 transition hover:border-emerald-400/60 hover:text-white"
+                {...ayudaVelocidad.trigger}
+                className="relative rounded-xl border border-white/15 bg-black/40 py-2 font-display text-[11px] font-bold uppercase tracking-widest text-emerald-300 transition hover:border-emerald-400/60 hover:text-white"
               >
                 ⚡ x{velocidad}
+                {ayudaVelocidad.burbuja}
               </button>
 
               <button
                 type="button"
                 onClick={() => setAutoRoll((v) => !v)}
-                title="Auto Roll: encadena el siguiente ROLL apenas colocás una carta"
-                className={`rounded-xl border py-2 font-display text-[9px] font-bold uppercase tracking-widest transition ${
+                {...ayudaAutoRoll.trigger}
+                className={`relative rounded-xl border py-2 font-display text-[9px] font-bold uppercase tracking-widest transition ${
                   autoRoll
                     ? "border-[#c6ff3d]/70 bg-[#c6ff3d]/15 text-[#c6ff3d]"
                     : "border-white/15 bg-black/40 text-zinc-400 hover:border-white/30"
                 }`}
               >
                 Auto {autoRoll ? "ON" : "OFF"}
+                {ayudaAutoRoll.burbuja}
               </button>
             </div>
           </div>

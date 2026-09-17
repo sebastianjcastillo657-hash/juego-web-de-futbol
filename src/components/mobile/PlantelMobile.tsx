@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SorteoMundial } from "@/components/SorteoMundial";
+import { useAyuda } from "@/components/ui/Ayuda";
 import { GAME_CONFIG } from "@/game/config";
 import { etiquetaRareza } from "@/game/rarity";
 import { mediaDelEquipo, mediaEfectiva } from "@/game/squad";
@@ -44,6 +45,7 @@ export function PlantelMobile({
   onSorteoListo,
 }: PlantelMobileProps) {
   const [tab, setTab] = useState<"titulares" | "suplentes">("titulares");
+  const ayudaNuevoPlantel = useAyuda("Empezar un plantel nuevo desde cero");
   const media = mediaDelEquipo(squad);
 
   const titulares = squad.slots
@@ -107,9 +109,11 @@ export function PlantelMobile({
       <button
         type="button"
         onClick={onReiniciar}
-        className="mx-auto rounded-lg border border-white/15 px-6 py-2 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400"
+        {...ayudaNuevoPlantel.trigger}
+        className="relative mx-auto rounded-lg border border-white/15 px-6 py-2 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400"
       >
         Nuevo plantel
+        {ayudaNuevoPlantel.burbuja}
       </button>
     </div>
   );
@@ -155,11 +159,11 @@ function Fila({
       </span>
       <span
         className={`w-8 shrink-0 text-right font-display font-bold tabular-nums ${
-          esElite ? "text-neon" : RAREZA_COLOR[player.rareza]
+          penalizado ? "text-red-400" : esElite ? "text-neon" : RAREZA_COLOR[player.rareza]
         }`}
       >
         {mediaMostrada}
-        {penalizado && <span className="ml-0.5 text-[9px] text-red-400">▼</span>}
+        {penalizado && <span className="ml-0.5 text-[9px]">▼</span>}
       </span>
       <span className="shrink-0">{player.bandera}</span>
       <span className="min-w-0 flex-1 truncate">{player.nombre}</span>

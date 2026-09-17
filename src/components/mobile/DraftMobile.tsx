@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { PlayerCard } from "@/components/PlayerCard";
 import { RollPanel } from "@/components/RollPanel";
 import { StatsPanel } from "@/components/StatsPanel";
@@ -9,6 +10,7 @@ import {
 } from "@/components/juego/cartaSilueta";
 import type { Juego } from "@/components/juego/useJuego";
 import { PitchMobile } from "@/components/mobile/PitchMobile";
+import { useAyuda } from "@/components/ui/Ayuda";
 import { GAME_CONFIG } from "@/game/config";
 import { glowDeNivel, nivelRevelacion } from "@/game/rarity";
 import type { EstadisticasPlantel, SquadState } from "@/types";
@@ -48,6 +50,28 @@ export function DraftMobile({ j, squad, stats }: DraftMobileProps) {
     setAutoRoll,
   } = j;
 
+  // Al elegir una carta del ROLL, la cancha puede quedar fuera de la vista
+  // (el jugador venía mirando las 4 opciones, más abajo en la pantalla): la
+  // llevamos automáticamente para que no tenga que buscarla con el dedo.
+  const pitchRef = useRef<HTMLDivElement>(null);
+  function tocarCandidato(id: string) {
+    const seleccionando = seleccionadaId !== id;
+    elegirCartaRoll(id);
+    if (seleccionando) {
+      pitchRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  const ayudaVelocidad = useAyuda("Cambiar la velocidad de la ruleta");
+  const ayudaAutoRoll = useAyuda(
+    "Sortear de nuevo automáticamente al colocar una carta",
+  );
+  const ayudaTerminar = useAyuda(
+    completo ? "Finalizar selección del equipo" : "Completá los 11 titulares y los 5 suplentes",
+    true,
+  );
+  const ayudaExit = useAyuda("Salir y empezar un plantel nuevo", true);
+
   return (
     <div className="flex flex-col gap-4 pb-4">
       <header className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2">
@@ -61,12 +85,14 @@ export function DraftMobile({ j, squad, stats }: DraftMobileProps) {
 
       <StatsPanel stats={stats} formacionId={squad.formation.id} />
 
-      <PitchMobile
-        squad={squad}
-        seleccionable={seleccionada}
-        seleccionadoSlotId={slotSeleccionado}
-        onSlot={usarSlot}
-      />
+      <div ref={pitchRef}>
+        <PitchMobile
+          squad={squad}
+          seleccionable={seleccionada}
+          seleccionadoSlotId={slotSeleccionado}
+          onSlot={usarSlot}
+        />
+      </div>
 
       <div className="flex items-stretch gap-2">
         <div className="min-w-0 flex-1">
@@ -87,20 +113,24 @@ export function DraftMobile({ j, squad, stats }: DraftMobileProps) {
           <button
             type="button"
             onClick={siguienteVelocidad}
-            className="rounded-xl border border-white/15 bg-black/40 py-2 font-display text-[10px] font-bold uppercase tracking-widest text-emerald-300"
+            {...ayudaVelocidad.trigger}
+            className="relative rounded-xl border border-white/15 bg-black/40 py-2 font-display text-[10px] font-bold uppercase tracking-widest text-emerald-300"
           >
             ⚡ x{velocidad}
+            {ayudaVelocidad.burbuja}
           </button>
           <button
             type="button"
             onClick={() => setAutoRoll((v) => !v)}
-            className={`rounded-xl border py-2 font-display text-[8px] font-bold uppercase tracking-widest transition ${
+            {...ayudaAutoRoll.trigger}
+            className={`relative rounded-xl border py-2 font-display text-[8px] font-bold uppercase tracking-widest transition ${
               autoRoll
                 ? "border-[#c6ff3d]/70 bg-[#c6ff3d]/15 text-[#c6ff3d]"
                 : "border-white/15 bg-black/40 text-zinc-400"
             }`}
           >
             Auto {autoRoll ? "ON" : "OFF"}
+            {ayudaAutoRoll.burbuja}
           </button>
         </div>
       </div>
@@ -133,16 +163,22 @@ export function DraftMobile({ j, squad, stats }: DraftMobileProps) {
 
           if (carta && i < cartasReveladas) {
             const nivel = nivelRevelacion(carta);
+            const esSeleccionada = carta.id === seleccionadaId;
+            // Las candidatas todavía no elegidas ocupan la mitad del tamaño:
+            // la que el jugador va tocando se agranda de vuelta a tamaño
+            // completo como confirmación visual de cuál eligió.
             return (
               <div
                 key={carta.id}
-                className={`relative rounded-xl ${claseImpactoRevelado(nivel)}`}
+                className={`relative rounded-xl ${claseImpactoRevelado(nivel)} ${
+                  esSeleccionada ? "" : "mx-auto w-1/2"
+                }`}
                 style={{ "--glow": glowDeNivel(nivel) } as React.CSSProperties}
               >
                 <PlayerCard
                   player={carta}
-                  seleccionada={carta.id === seleccionadaId}
-                  onClick={() => elegirCartaRoll(carta.id)}
+                  seleccionada={esSeleccionada}
+                  onClick={() => tocarCandidato(carta.id)}
                 />
               </div>
             );
@@ -152,16 +188,21 @@ export function DraftMobile({ j, squad, stats }: DraftMobileProps) {
             const nivel = nivelRevelacion(carta);
             const { msAnticipacion } = GAME_CONFIG.revelacionCarta[nivel];
             return (
-              <CartaSilueta
-                key={`ph-${i}`}
-                pulsando
-                nivel={nivel}
-                msAnticipacion={msAnticipacion / velocidad}
-              />
+              <div key={`ph-${i}`} className="mx-auto w-1/2">
+                <CartaSilueta
+                  pulsando
+                  nivel={nivel}
+                  msAnticipacion={msAnticipacion / velocidad}
+                />
+              </div>
             );
           }
 
-          return <CartaSilueta key={`ph-${i}`} pulsando={girando || revelando} />;
+          return (
+            <div key={`ph-${i}`} className="mx-auto w-1/2">
+              <CartaSilueta pulsando={girando || revelando} />
+            </div>
+          );
         })}
       </div>
 
@@ -182,20 +223,24 @@ export function DraftMobile({ j, squad, stats }: DraftMobileProps) {
           type="button"
           onClick={terminar}
           disabled={!completo}
-          className={`flex-1 rounded-xl border-2 font-display font-bold uppercase tracking-[0.2em] transition active:scale-95 ${
+          {...ayudaTerminar.trigger}
+          className={`relative flex-1 rounded-xl border-2 font-display font-bold uppercase tracking-[0.2em] transition active:scale-95 ${
             completo
               ? "border-[#ffd23f] bg-gradient-to-r from-[#ffd23f] to-[#f5b301] py-4 text-base text-black shadow-[0_0_26px_-6px_rgba(255,210,63,0.95)]"
               : "cursor-not-allowed border-white/10 bg-zinc-800 py-3 text-sm text-zinc-500"
           }`}
         >
           {completo ? "Terminar" : "Completá 11+5"}
+          {ayudaTerminar.burbuja}
         </button>
         <button
           type="button"
           onClick={reiniciar}
-          className="rounded-xl border border-white/15 px-4 py-3 font-display text-xs font-semibold uppercase tracking-widest text-zinc-300"
+          {...ayudaExit.trigger}
+          className="relative rounded-xl border border-white/15 px-4 py-3 font-display text-xs font-semibold uppercase tracking-widest text-zinc-300"
         >
           Exit
+          {ayudaExit.burbuja}
         </button>
       </div>
     </div>

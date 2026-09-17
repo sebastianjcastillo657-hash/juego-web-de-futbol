@@ -2,6 +2,7 @@
 
 import { EVENTO_ICONO } from "@/components/juego/partidoUtil";
 import { PitchMobile } from "@/components/mobile/PitchMobile";
+import { useAyuda } from "@/components/ui/Ayuda";
 import type { Player, PartidoMundial, PartidoPreparado, SquadState } from "@/types";
 
 interface PostPartidoMobileProps {
@@ -25,6 +26,7 @@ export function PostPartidoMobile({
   onSlot,
   onJugar,
 }: PostPartidoMobileProps) {
+  const ayudaJugar = useAyuda(`Empezar el partido ${actual.numero}`);
   return (
     <div className="flex flex-col gap-5">
       {/* ---- Resumen del partido anterior ---- */}
@@ -118,9 +120,11 @@ export function PostPartidoMobile({
         <button
           type="button"
           onClick={onJugar}
-          className="mx-auto rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-8 py-3 font-display text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_26px_-6px_rgba(16,185,129,0.9)] active:scale-95"
+          {...ayudaJugar.trigger}
+          className="relative mx-auto rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-8 py-3 font-display text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_26px_-6px_rgba(16,185,129,0.9)] active:scale-95"
         >
           Jugar partido {actual.numero}
+          {ayudaJugar.burbuja}
         </button>
       </div>
     </div>

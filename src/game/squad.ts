@@ -4,7 +4,21 @@
 import { GAME_CONFIG } from "@/game/config";
 import { slotsDeFormacion } from "@/game/formations";
 import { promedioMedias } from "@/game/ratings";
-import type { Formation, Player, SquadState, TitularSlot } from "@/types";
+import type {
+  Formation,
+  Player,
+  PosicionGenerica,
+  SquadState,
+  TitularSlot,
+} from "@/types";
+
+/** Orden de las líneas de campo (sin el arco) para medir qué tan lejos está
+ *  una posición de otra: adyacentes (distancia 1) o extremos (distancia 2). */
+const ORDEN_LINEA: Record<Exclude<PosicionGenerica, "Arquero">, number> = {
+  Defensa: 0,
+  Medio: 1,
+  Delantero: 2,
+};
 
 const SUP_IDS = Array.from(
   { length: GAME_CONFIG.suplentes },
@@ -81,9 +95,19 @@ export function mediaEfectiva(player: Player, slot: TitularSlot | "suplente"): n
   if (slot === "suplente") return player.media;
   if (slot.posicion === player.posicion) return player.media;
   const arcoInvolucrado = slot.posicion === "Arquero" || player.posicion === "Arquero";
-  const castigo = arcoInvolucrado
-    ? GAME_CONFIG.penalizacion.liosConArco
-    : GAME_CONFIG.penalizacion.posicionIncorrectaCampo;
+  if (arcoInvolucrado) {
+    return Math.max(1, player.media - GAME_CONFIG.penalizacion.liosConArco);
+  }
+  // Ambas son líneas de campo (Defensa/Medio/Delantero): la penalización
+  // crece con la distancia entre esa línea y la natural del jugador.
+  const distancia = Math.abs(
+    ORDEN_LINEA[slot.posicion as Exclude<PosicionGenerica, "Arquero">] -
+      ORDEN_LINEA[player.posicion as Exclude<PosicionGenerica, "Arquero">],
+  );
+  const castigo =
+    distancia >= 2
+      ? GAME_CONFIG.penalizacion.lineaLejana
+      : GAME_CONFIG.penalizacion.lineaCercana;
   return Math.max(1, player.media - castigo);
 }
 

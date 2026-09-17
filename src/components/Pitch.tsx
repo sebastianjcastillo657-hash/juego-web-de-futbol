@@ -4,6 +4,7 @@ import { PlayerCard } from "@/components/PlayerCard";
 import { PlayerSilhouette } from "@/components/PlayerSilhouette";
 import {
   idsSuplentes,
+  mediaEfectiva,
   slotsCompatibles,
   slotsDisponibles,
 } from "@/game/squad";
@@ -116,6 +117,7 @@ export function Pitch({
                     asistencias={asistenciasPorJugador?.[carta.id] ?? 0}
                     tarjetas={tarjetasPorJugador?.[carta.id]}
                     expulsado={expulsadosPorJugador?.has(carta.id) ?? false}
+                    mediaEnPosicion={mediaEfectiva(carta, s)}
                     onClick={soloLectura ? undefined : () => onSlot(s.id)}
                   />
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAyuda } from "@/components/ui/Ayuda";
 import { GAME_CONFIG } from "@/game/config";
 import { prepararPartidos } from "@/game/mundial";
 import { MUNDIALES, seleccionesDe } from "@/data/players";
@@ -171,6 +172,14 @@ export function SorteoMundial({ onListo }: SorteoMundialProps) {
     onListoRef.current?.(resultado.mundial, resultado.partidos, etapaInicial);
   }
 
+  const ayudaComenzarSaltar = useAyuda(
+    fase === "idle"
+      ? "Sortear el Mundial y los 7 rivales"
+      : "Mostrar el resultado sin esperar la animación",
+  );
+  const ayudaModificar = useAyuda("Ajustar el plantel antes del primer partido");
+  const ayudaComenzarPartido = useAyuda("Empezar el Mundial ya, sin tocar el plantel");
+
   return (
     <div className="flex w-full flex-col items-center gap-2">
       {/* Ruleta del Mundial. */}
@@ -209,9 +218,11 @@ export function SorteoMundial({ onListo }: SorteoMundialProps) {
         <button
           type="button"
           onClick={fase === "idle" ? comenzar : saltar}
-          className="rounded-xl border-2 border-[#ffd23f] bg-gradient-to-r from-[#ffd23f] to-[#f5b301] px-10 py-2.5 font-display text-base font-bold uppercase tracking-[0.28em] text-black shadow-[0_0_24px_-6px_rgba(255,210,63,0.75)] transition hover:brightness-110 active:scale-95"
+          {...ayudaComenzarSaltar.trigger}
+          className="relative rounded-xl border-2 border-[#ffd23f] bg-gradient-to-r from-[#ffd23f] to-[#f5b301] px-10 py-2.5 font-display text-base font-bold uppercase tracking-[0.28em] text-black shadow-[0_0_24px_-6px_rgba(255,210,63,0.75)] transition hover:brightness-110 active:scale-95"
         >
           {fase === "idle" ? "Comenzar" : "Saltar"}
+          {ayudaComenzarSaltar.burbuja}
         </button>
       )}
 
@@ -276,16 +287,20 @@ export function SorteoMundial({ onListo }: SorteoMundialProps) {
           <button
             type="button"
             onClick={() => elegir("editar")}
-            className="w-full rounded-xl border-2 border-white/20 bg-black/40 px-6 py-3 font-display text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:border-emerald-400/60 hover:text-emerald-300 sm:w-auto"
+            {...ayudaModificar.trigger}
+            className="relative w-full rounded-xl border-2 border-white/20 bg-black/40 px-6 py-3 font-display text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:border-emerald-400/60 hover:text-emerald-300 sm:w-auto"
           >
             Modificar equipo
+            {ayudaModificar.burbuja}
           </button>
           <button
             type="button"
             onClick={() => elegir("jugando")}
-            className="w-full rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-8 py-3 font-display text-xs font-bold uppercase tracking-[0.2em] text-white shadow-[0_0_22px_-6px_rgba(16,185,129,0.9)] transition active:scale-95 sm:w-auto"
+            {...ayudaComenzarPartido.trigger}
+            className="relative w-full rounded-xl border-2 border-emerald-300/30 bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-8 py-3 font-display text-xs font-bold uppercase tracking-[0.2em] text-white shadow-[0_0_22px_-6px_rgba(16,185,129,0.9)] transition active:scale-95 sm:w-auto"
           >
             Comenzar partido
+            {ayudaComenzarPartido.burbuja}
           </button>
         </div>
       )}
